@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.0"?>
 <!--
-    Copyright (c) 2007, 2009 David Green and others.
+    Copyright (c) 2007, 2013 David Green and others.
     All rights reserved. This program and the accompanying materials
     are made available under the terms of the Eclipse Public License v1.0
     which accompanies this distribution, and is available at
@@ -9,10 +9,12 @@
     
     Contributors:
         David Green - initial API and implementation
+        Torkild U. Resheim - Added support for document builder extensions
  -->
 <plugin>
    <extension-point id="markupLanguage" name="Markup Language" schema="schema/markupLanguage.exsd"/>
    <extension-point id="markupValidationRule" name="Markup Validation Rule" schema="schema/markupValidationRule.exsd"/>
+   <extension-point id="documentBuilderExtension" name="Document Builder Extension" schema="schema/documentBuilderExtension.exsd"/>
 
    <!-- The wikitext content type. MarkupLanguage-providing plugins are expected to subclass this content type
         for the purpose of associating the editor with the appropriate files -->

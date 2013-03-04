@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2011 David Green and others.
+ * Copyright (c) 2007, 2013 David Green and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Added support for document builder extensions
  *******************************************************************************/
 package org.eclipse.mylyn.internal.wikitext.ui.editor;
 
@@ -80,10 +81,12 @@ import org.eclipse.mylyn.wikitext.core.WikiText;
 import org.eclipse.mylyn.wikitext.core.parser.Attributes;
 import org.eclipse.mylyn.wikitext.core.parser.DocumentBuilder.BlockType;
 import org.eclipse.mylyn.wikitext.core.parser.MarkupParser;
+import org.eclipse.mylyn.wikitext.core.parser.builder.DocumentBuilderExtension;
 import org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder;
 import org.eclipse.mylyn.wikitext.core.parser.markup.MarkupLanguage;
 import org.eclipse.mylyn.wikitext.core.parser.outline.OutlineItem;
 import org.eclipse.mylyn.wikitext.core.parser.outline.OutlineParser;
+import org.eclipse.mylyn.wikitext.core.util.ServiceLocator;
 import org.eclipse.mylyn.wikitext.ui.editor.MarkupSourceViewerConfiguration;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
@@ -131,6 +134,7 @@ import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
  * 
  * @author David Green
  * @author Nicolas Bros
+ * @author Torkild U. Resheim
  */
 public class MarkupEditor extends TextEditor implements IShowInTarget, IShowInSource, CommandManager {
 	private static final String RULER_CONTEXT_MENU_ID = "org.eclipse.mylyn.internal.wikitext.ui.editor.MarkupEditor.ruler"; //$NON-NLS-1$
@@ -583,6 +587,14 @@ public class MarkupEditor extends TextEditor implements IShowInTarget, IShowInSo
 							}
 						}
 					};
+
+					// Activate all available extensions for the document builder
+					ServiceLocator sl = ServiceLocator.getInstance(getClass().getClassLoader());
+					Set<DocumentBuilderExtension> extensions = sl.getDocumentBuilderExtensions(builder);
+					for (DocumentBuilderExtension extension : extensions) {
+						builder.activateExtension(extension);
+					}
+
 					builder.setTitle(title);
 
 					IPath location = file == null ? null : file.getLocation();
@@ -616,6 +628,7 @@ public class MarkupEditor extends TextEditor implements IShowInTarget, IShowInSo
 						builder.endDocument();
 					}
 					xhtml = writer.toString();
+
 				} catch (Exception e) {
 					StringWriter stackTrace = new StringWriter();
 					PrintWriter writer = new PrintWriter(stackTrace);

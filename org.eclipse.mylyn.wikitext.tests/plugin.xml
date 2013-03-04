@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mylyn.wikitext.core.documentBuilderExtension">
+      <builderExtension
+            builder="org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder"
+            class="org.eclipse.mylyn.wikitext.core.parser.builder.TestHtmlDocumentBuilderExtension"
+            name="TestHtmlDocumentBuilderExtension">
+      </builderExtension>
+      <builderExtension
+            builder="org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder"
+            class="org.eclipse.mylyn.wikitext.core.util.anttask.TestMarkupToHtmlTaskTestExtension"
+            name="TestMarkupToHtmlTaskTestExtension">
+      </builderExtension>
+   </extension>
+
+</plugin>

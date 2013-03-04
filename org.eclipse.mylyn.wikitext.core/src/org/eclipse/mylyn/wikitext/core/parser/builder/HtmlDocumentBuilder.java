@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 David Green and others.
+ * Copyright (c) 2007, 2013 David Green and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Added support for document builder extensions
  *******************************************************************************/
 package org.eclipse.mylyn.wikitext.core.parser.builder;
 
@@ -20,9 +21,11 @@ import java.io.Writer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.eclipse.mylyn.wikitext.core.parser.Attributes;
@@ -43,6 +46,7 @@ import org.eclipse.mylyn.wikitext.core.util.XmlStreamWriter;
  * 
  * @author David Green
  * @author Matthias Kempka extensibility improvements, see bug 259089
+ * @author Torkild U. Resheim
  * @since 1.0
  */
 public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
@@ -228,6 +232,11 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 	private boolean filterEntityReferences = false;
 
 	private String copyrightNotice;
+
+	/**
+	 * @since 1.9
+	 */
+	protected Set<DocumentBuilderExtension> activeExtensions = new HashSet<DocumentBuilderExtension>();
 
 	/**
 	 * construct the HtmlDocumentBuilder.
@@ -677,6 +686,14 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 				emitStylesheet(stylesheet);
 			}
 		}
+
+		// Handle any document builder extensions that contribute to document head
+		for (DocumentBuilderExtension extension : activeExtensions) {
+			if (extension instanceof HtmlDocumentBuilderExtension) {
+				((HtmlDocumentBuilderExtension) extension).appendToDocumentHead(writer);
+			}
+		}
+
 	}
 
 	private void emitStylesheet(Stylesheet stylesheet) {
@@ -732,7 +749,6 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 			writer.writeEndElement(); // html
 			writer.writeEndDocument();
 		}
-
 		writer.close();
 	}
 
@@ -743,6 +759,12 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 	 */
 	protected void beginBody() {
 		writer.writeStartElement(htmlNsUri, "body"); //$NON-NLS-1$
+		// Handle any document builder extensions that contribute to document body
+		for (DocumentBuilderExtension extension : activeExtensions) {
+			if (extension instanceof HtmlDocumentBuilderExtension) {
+				((HtmlDocumentBuilderExtension) extension).prependToDocumentBody(writer);
+			}
+		}
 	}
 
 	/**
@@ -751,6 +773,12 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 	 * @see #beginBody()
 	 */
 	protected void endBody() {
+		// Handle any document builder extensions that contribute to document body
+		for (DocumentBuilderExtension extension : activeExtensions) {
+			if (extension instanceof HtmlDocumentBuilderExtension) {
+				((HtmlDocumentBuilderExtension) extension).appendToDocumentBody(writer);
+			}
+		}
 		writer.writeEndElement(); // body
 	}
 
@@ -1381,5 +1409,25 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 	 */
 	public void setCopyrightNotice(String copyrightNotice) {
 		this.copyrightNotice = copyrightNotice;
+	}
+
+	/**
+	 * Activates the specified extension.
+	 * 
+	 * @since 1.9
+	 */
+	public void activateExtension(DocumentBuilderExtension extension) {
+		activeExtensions.add(extension);
+	}
+
+	/**
+	 * Returns the list of all active extensions.
+	 * 
+	 * @see #activateExtension(DocumentBuilderExtension)
+	 * @return the list of all active extension
+	 * @since 1.9
+	 */
+	public Set<DocumentBuilderExtension> getActiveExtensions() {
+		return activeExtensions;
 	}
 }

@@ -1,0 +1,139 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!-- Schema file written by PDE -->
+<schema targetNamespace="org.eclipse.mylyn.wikitext.core" xmlns="http://www.w3.org/2001/XMLSchema">
+<annotation>
+      <appInfo>
+         <meta.schema plugin="org.eclipse.mylyn.wikitext.core" id="documentBuilderExtension" name="Document Builder Extension"/>
+      </appInfo>
+      <documentation>
+         A means of extending wikitext document builders. A document builder generates for instance HTML files from a data model built from wikitext markup. The extension can be used to add content to generated files. Currently only document builders producing HTML are supported.
+      </documentation>
+   </annotation>
+
+   <element name="extension">
+      <annotation>
+         <appInfo>
+            <meta.element />
+         </appInfo>
+      </annotation>
+      <complexType>
+         <sequence>
+            <element ref="builderExtension" minOccurs="1" maxOccurs="unbounded"/>
+         </sequence>
+         <attribute name="point" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="id" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appInfo>
+                  <meta.attribute translatable="true"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="builderExtension">
+      <annotation>
+         <documentation>
+            Builder extensions are picked up by WikiText document builders as they are generating documents. By implementing the available callback methods one can create additional document content at certain sections.
+         </documentation>
+      </annotation>
+      <complexType>
+         <sequence minOccurs="0" maxOccurs="1">
+         </sequence>
+         <attribute name="builder" type="string" use="required">
+            <annotation>
+               <documentation>
+                  the document builder type that is to be extended.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="java" basedOn="org.eclipse.mylyn.wikitext.core.parser.DocumentBuilder:"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="class" type="string" use="required">
+            <annotation>
+               <documentation>
+                  the implementation of the document builder extension.
+               </documentation>
+               <appInfo>
+                  <meta.attribute kind="java"/>
+               </appInfo>
+            </annotation>
+         </attribute>
+         <attribute name="name" type="string" use="required">
+            <annotation>
+               <documentation>
+                  name of the builder extension - for the user interface.
+               </documentation>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="since"/>
+      </appInfo>
+      <documentation>
+         1.9
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="examples"/>
+      </appInfo>
+      <documentation>
+         &lt;pre&gt;
+   &lt;extension
+         point=&quot;org.eclipse.mylyn.wikitext.core.documentBuilderExtension&quot;&gt;
+      &lt;builderExtension
+            builder=&quot;org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder&quot;
+            class=&quot;org.eclipse.mylyn.wikitext.MyDocumentBuilder&quot;
+            name=&quot;MyDocumentBuilder&quot;&gt;
+      &lt;/builderExtension&gt;
+   &lt;/extension&gt;
+&lt;/pre&gt;
+      </documentation>
+   </annotation>
+
+
+   <annotation>
+      <appInfo>
+         <meta.section type="implementation"/>
+      </appInfo>
+      <documentation>
+         An abstract document builder extension is supplied for &lt;li&gt;HtmlDocumentBuilder&lt;/li&gt;. This is intended to be subclassed and provide basic features for injecting code at suitable locations; such as headers, footers and before content. While this mechanism currently only supports the HTML document builder, it can be easily extended to support other types of document builders.
+      </documentation>
+   </annotation>
+
+   <annotation>
+      <appInfo>
+         <meta.section type="copyright"/>
+      </appInfo>
+      <documentation>
+         Copyright &amp;copy; 2013 Torkild U. Resheim.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License v1.0
+which accompanies this distribution, and is available at
+http://www.eclipse.org/legal/epl-v10.html
+      </documentation>
+   </annotation>
+
+</schema>
