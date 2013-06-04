@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 David Green and others.
+ * Copyright (c) 2007, 2013 David Green and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Handle links when transforming file based wiki
  *******************************************************************************/
 package org.eclipse.mylyn.wikitext.core.parser.builder;
 
@@ -43,6 +44,7 @@ import org.eclipse.mylyn.wikitext.core.util.XmlStreamWriter;
  * 
  * @author David Green
  * @author Matthias Kempka extensibility improvements, see bug 259089
+ * @author Torkild U. Resheim
  * @since 1.0
  */
 public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
@@ -229,6 +231,8 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 
 	private String copyrightNotice;
 
+	private String htmlFilenameFormat = null;
+
 	/**
 	 * construct the HtmlDocumentBuilder.
 	 * 
@@ -284,6 +288,7 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 		other.setXhtmlStrict(xhtmlStrict);
 		other.setPrependImagePrefix(prependImagePrefix);
 		other.setCopyrightNotice(getCopyrightNotice());
+		other.setHtmlFilenameFormat(htmlFilenameFormat);
 		if (stylesheets != null) {
 			other.stylesheets = new ArrayList<Stylesheet>();
 			other.stylesheets.addAll(stylesheets);
@@ -1134,12 +1139,65 @@ public class HtmlDocumentBuilder extends AbstractXmlDocumentBuilder {
 	 * emit the href attribute of an anchor. Subclasses may override to alter the default href or to add other
 	 * attributes such as <code>onclick</code>. Overriding classes should pass the href to
 	 * {@link #makeUrlAbsolute(String)} prior to writing it to the writer.
+	 * <p>
+	 * This method will attempt to determine whether or not the link goes to another markup file. If this case the link
+	 * will be rewritten to target the generated page using the format specified by {@link #getHtmlFilenameFormat()}.
+	 * </p>
 	 * 
 	 * @param href
 	 *            the url for the href attribute
+	 * @see #getHtmlFilenameFormat()
 	 */
 	protected void emitAnchorHref(String href) {
+		if (getHtmlFilenameFormat() != null) {
+			// We're guessing here. If there is no file suffix in the linked URL
+			// and it's not an absolute or internal URL we assume that this is a 
+			// link to a markup document that is being converted to HTML.
+			if (isRelativeMissingFileSuffix(href)) {
+				int split = href.indexOf('#');
+				if (split > 0) {
+					href = getHtmlFilenameFormat().replace("$1", href.substring(0, split)) + href.substring(split); //$NON-NLS-1$
+				} else if (split == -1) {
+					href = getHtmlFilenameFormat().replace("$1", href); //$NON-NLS-1$
+				}
+			}
+		}
 		writer.writeAttribute("href", makeUrlAbsolute(href)); //$NON-NLS-1$
+	}
+
+	/**
+	 * Determines whether or not the <i>href</i> has a a file suffix and is a relative reference.
+	 * 
+	 * @param href
+	 *            the reference to test
+	 * @return <code>true</code> if the <i>href</i> is relative and missing a file suffix
+	 * @since 1.9
+	 */
+	public boolean isRelativeMissingFileSuffix(String href) {
+		String[] names = href.split("/"); //$NON-NLS-1$
+		String name = names[names.length - 1];
+		return (name.indexOf('.') == -1 && !ABSOLUTE_URL_PATTERN.matcher(href).matches());
+	}
+
+	/**
+	 * Returns the HTML file name format.
+	 * 
+	 * @see #setHtmlFilenameFormat(String)
+	 * @since 1.9
+	 */
+	public String getHtmlFilenameFormat() {
+		return htmlFilenameFormat;
+	}
+
+	/**
+	 * The format of the HTML output file. Consists of a pattern where the '$1' is replaced with the filename of the
+	 * input file.
+	 * 
+	 * @param htmlFilenameFormat
+	 * @since 1.9
+	 */
+	public void setHtmlFilenameFormat(String htmlFilenameFormat) {
+		this.htmlFilenameFormat = htmlFilenameFormat;
 	}
 
 	private String prependImageUrl(String imageUrl) {

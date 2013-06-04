@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Handle links when transforming file based wiki
  *******************************************************************************/
 package org.eclipse.mylyn.wikitext.core.parser.builder;
 
@@ -35,6 +36,7 @@ import org.eclipse.mylyn.wikitext.textile.core.TextileLanguage;
 
 /**
  * @author David Green
+ * @author Torkild U. Resheim
  */
 public class HtmlDocumentBuilderTest extends TestCase {
 
@@ -75,6 +77,12 @@ public class HtmlDocumentBuilderTest extends TestCase {
 		parser.setBuilder(builder);
 	}
 
+	private void assertMatch(String pattern) {
+		Pattern p = Pattern.compile(pattern);
+		String html = out.toString();
+		assertTrue(p.matcher(html).find());
+	}
+
 	public void testRelativeUrlWithBase() throws URISyntaxException {
 		builder.setBase(new URI("http://www.foo.bar/baz"));
 		parser.parse("\"An URL\":foo/bar.html");
@@ -99,6 +107,44 @@ public class HtmlDocumentBuilderTest extends TestCase {
 		TestUtil.println("HTML: \n" + html);
 		Pattern pattern = Pattern.compile("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo/bar.html\">An URL</a>");
 		assertTrue(pattern.matcher(html).find());
+	}
+
+	public void testLinkToConvertedMarkupDocument() throws URISyntaxException {
+		final File file = new File("/base/2/with space/");
+		builder.setHtmlFilenameFormat("$1.html");
+		builder.setBase(file.toURI());
+		parser.parse("\"An URL\":foo.bar/bar");
+		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo.bar/bar.html\">An URL</a>");
+	}
+
+	public void testLinkToConvertedMarkupDocument_Image() throws URISyntaxException {
+		final File file = new File("/base/2/with space/");
+		builder.setHtmlFilenameFormat("$1.html");
+		builder.setBase(file.toURI());
+		parser.parse("\"An URL\":foo.bar/bar.jpg");
+		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo.bar/bar.jpg\">An URL</a>");
+	}
+
+	public void testLinkToConvertedMarkupDocument_WithAnchor() throws URISyntaxException {
+		final File file = new File("/base/2/with space/");
+		builder.setHtmlFilenameFormat("$1.html");
+		builder.setBase(file.toURI());
+		parser.parse("\"An URL\":foo/bar#bar");
+		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo/bar.html#bar\">An URL</a>");
+	}
+
+	public void testLinkToConvertedMarkupDocument_Internal() throws URISyntaxException {
+		builder.setHtmlFilenameFormat("$1.html");
+		parser.parse("\"An URL\":#bar");
+		assertMatch("<a href=\"#bar\">An URL</a>");
+	}
+
+	public void testIsRelativeMissingFileSuffix() {
+		assertTrue(builder.isRelativeMissingFileSuffix("href"));
+		assertTrue(builder.isRelativeMissingFileSuffix("my/href"));
+		assertFalse(builder.isRelativeMissingFileSuffix("my/href.html"));
+		assertFalse(builder.isRelativeMissingFileSuffix("http://localhost/my/href"));
+		assertFalse(builder.isRelativeMissingFileSuffix("http://localhost/my/href.html"));
 	}
 
 	public void testNoGratuitousWhitespace() {
