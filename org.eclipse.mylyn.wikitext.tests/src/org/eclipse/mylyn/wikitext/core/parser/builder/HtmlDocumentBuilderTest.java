@@ -109,6 +109,26 @@ public class HtmlDocumentBuilderTest extends TestCase {
 		assertTrue(pattern.matcher(html).find());
 	}
 
+	public void testLinkToMarkupDocument() throws URISyntaxException {
+		final File file = new File("/base/2/with space/");
+		builder.setBase(file.toURI());
+		parser.parse("\"An URL\":foo/bar");
+		String html = out.toString();
+		TestUtil.println("HTML: \n" + html);
+		Pattern pattern = Pattern.compile("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo/bar.html\">An URL</a>");
+		assertTrue(pattern.matcher(html).find());
+	}
+
+	public void testLinkToMarkupDocumentWithAnchor() throws URISyntaxException {
+		final File file = new File("/base/2/with space/");
+		builder.setBase(file.toURI());
+		parser.parse("\"An URL\":foo/bar#bar");
+		String html = out.toString();
+		TestUtil.println("HTML: \n" + html);
+		Pattern pattern = Pattern.compile("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo/bar.html#bar\">An URL</a>");
+		assertTrue(pattern.matcher(html).find());
+	}
+
 	public void testLinkToConvertedMarkupDocument() throws URISyntaxException {
 		final File file = new File("/base/2/with space/");
 		builder.setHtmlFilenameFormat("$1.html");
@@ -254,7 +274,7 @@ public class HtmlDocumentBuilderTest extends TestCase {
 
 		TestUtil.println(html);
 
-		assertTrue(html.contains("<a href=\"foo\">test</a>"));
+		assertTrue(html.contains("<a href=\"foo.html\">test</a>"));
 	}
 
 	public void testDefaultTargetForInternalLinks2() throws Exception {

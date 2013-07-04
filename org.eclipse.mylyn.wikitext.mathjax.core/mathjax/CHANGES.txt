@@ -1,0 +1,5 @@
+The following has been removed in order to save space:
+* Image fonts for old browsers.
+* Uncompressed JavaScript.
+* Test files.
+* Documentation. See http://docs.mathjax.org/
