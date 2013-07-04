@@ -167,44 +167,6 @@ public class HtmlDocumentBuilderTest extends TestCase {
 		assertFalse(builder.isRelativeMissingFileSuffix("http://localhost/my/href.html"));
 	}
 
-	public void testLinkToConvertedMarkupDocument() throws URISyntaxException {
-		final File file = new File("/base/2/with space/");
-		builder.setHtmlFilenameFormat("$1.html");
-		builder.setBase(file.toURI());
-		parser.parse("\"An URL\":foo.bar/bar");
-		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo.bar/bar.html\">An URL</a>");
-	}
-
-	public void testLinkToConvertedMarkupDocument_Image() throws URISyntaxException {
-		final File file = new File("/base/2/with space/");
-		builder.setHtmlFilenameFormat("$1.html");
-		builder.setBase(file.toURI());
-		parser.parse("\"An URL\":foo.bar/bar.jpg");
-		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo.bar/bar.jpg\">An URL</a>");
-	}
-
-	public void testLinkToConvertedMarkupDocument_WithAnchor() throws URISyntaxException {
-		final File file = new File("/base/2/with space/");
-		builder.setHtmlFilenameFormat("$1.html");
-		builder.setBase(file.toURI());
-		parser.parse("\"An URL\":foo/bar#bar");
-		assertMatch("<a href=\"file:(/[A-Z]{1}:)?/base/2/with%20space/foo/bar.html#bar\">An URL</a>");
-	}
-
-	public void testLinkToConvertedMarkupDocument_Internal() throws URISyntaxException {
-		builder.setHtmlFilenameFormat("$1.html");
-		parser.parse("\"An URL\":#bar");
-		assertMatch("<a href=\"#bar\">An URL</a>");
-	}
-
-	public void testIsRelativeMissingFileSuffix() {
-		assertTrue(builder.isRelativeMissingFileSuffix("href"));
-		assertTrue(builder.isRelativeMissingFileSuffix("my/href"));
-		assertFalse(builder.isRelativeMissingFileSuffix("my/href.html"));
-		assertFalse(builder.isRelativeMissingFileSuffix("http://localhost/my/href"));
-		assertFalse(builder.isRelativeMissingFileSuffix("http://localhost/my/href.html"));
-	}
-
 	public void testNoGratuitousWhitespace() {
 		builder.beginDocument();
 		builder.beginBlock(BlockType.PARAGRAPH, new Attributes());
