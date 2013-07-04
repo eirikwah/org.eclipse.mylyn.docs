@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2011 David Green and others.
+ * Copyright (c) 2007, 2013 David Green and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Added support for document builder extensions
  *******************************************************************************/
 package org.eclipse.mylyn.internal.wikitext.core;
 
@@ -28,6 +29,7 @@ import org.eclipse.core.runtime.Plugin;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.mylyn.internal.wikitext.core.util.EclipseServiceLocator;
 import org.eclipse.mylyn.internal.wikitext.core.validation.ValidationRules;
+import org.eclipse.mylyn.wikitext.core.parser.builder.DocumentBuilderExtension;
 import org.eclipse.mylyn.wikitext.core.parser.markup.MarkupLanguage;
 import org.eclipse.mylyn.wikitext.core.util.ServiceLocator;
 import org.eclipse.mylyn.wikitext.core.validation.MarkupValidator;
@@ -41,6 +43,7 @@ import org.osgi.framework.BundleContext;
  * {@link #getDefault()}.
  * 
  * @author David Green
+ * @author Torkild U. Resheim
  * @see #getDefault()
  * @see ServiceLocator
  */
@@ -50,9 +53,13 @@ public class WikiTextPlugin extends Plugin {
 
 	private static final String EXTENSION_VALIDATION_RULES = "markupValidationRule"; //$NON-NLS-1$
 
+	private static final String EXTENSION_BUILDER_EXTENSION = "documentBuilderExtension"; //$NON-NLS-1$
+
 	private static WikiTextPlugin plugin;
 
 	private SortedMap<String, Class<? extends MarkupLanguage>> languageByName;
+
+	private SortedMap<String, Class<? extends DocumentBuilderExtension>> extensionByName;
 
 	private Map<String, Class<? extends MarkupLanguage>> languageByFileExtension;
 
@@ -114,6 +121,37 @@ public class WikiTextPlugin extends Plugin {
 		return null;
 	}
 
+	/**
+	 * Get a document builder extension by name or FQN.
+	 * 
+	 * @param extensionName
+	 *            the name of the document builder extension to retrieve
+	 * @return the document builder extension or null if there is no extension known by the given name
+	 * @see #getDocumentBuilderExtensionNames()
+	 * @since 1.9
+	 */
+	public DocumentBuilderExtension getDocumentBuilderExtension(String extensionName) {
+		if (extensionByName == null) {
+			initializeDocumentBuilderExtensions();
+		}
+		Class<? extends DocumentBuilderExtension> extensionClass = extensionByName.get(extensionName);
+		if (extensionClass == null) {
+			// if not found by name, attempt to lookup by class name. 
+			for (Entry<String, Class<? extends DocumentBuilderExtension>> entry : extensionByName.entrySet()) {
+				Class<? extends DocumentBuilderExtension> clazz = entry.getValue();
+				if (clazz.getName().equals(extensionName)) {
+					extensionClass = clazz;
+					extensionName = entry.getKey();
+					break;
+				}
+			}
+		}
+		if (extensionClass != null) {
+			return instantiateDocumentBuilderExtension(extensionName, extensionClass);
+		}
+		return null;
+	}
+
 	private MarkupLanguage instantiateMarkupLanguage(String name, Class<? extends MarkupLanguage> languageClass) {
 		try {
 			MarkupLanguage language = languageClass.newInstance();
@@ -123,6 +161,19 @@ public class WikiTextPlugin extends Plugin {
 		} catch (Exception e) {
 			log(IStatus.ERROR, MessageFormat.format(Messages.getString("WikiTextPlugin.2"), name, //$NON-NLS-1$
 					languageClass.getName(), e.getMessage()), e);
+		}
+		return null;
+	}
+
+	private DocumentBuilderExtension instantiateDocumentBuilderExtension(String name,
+			Class<? extends DocumentBuilderExtension> extensionClass) {
+		try {
+			DocumentBuilderExtension extension = extensionClass.newInstance();
+			extension.setName(name);
+			return extension;
+		} catch (Exception e) {
+			log(IStatus.ERROR, MessageFormat.format(Messages.getString("WikiTextPlugin.0"), name, //$NON-NLS-1$
+					extensionClass.getName(), e.getMessage()), e);
 		}
 		return null;
 	}
@@ -199,6 +250,19 @@ public class WikiTextPlugin extends Plugin {
 			initializeMarkupLanguages();
 		}
 		return languageByName.keySet();
+	}
+
+	/**
+	 * Get the names of all known document extensions
+	 * 
+	 * @see #getDocumentBuilderExtension(String)
+	 * @since 1.9
+	 */
+	public Set<String> getDocumentBuilderExtensionNames() {
+		if (extensionByName == null) {
+			initializeDocumentBuilderExtensions();
+		}
+		return extensionByName.keySet();
 	}
 
 	/**
@@ -378,6 +442,65 @@ public class WikiTextPlugin extends Plugin {
 				this.languageByName = markupLanguageByName;
 				this.languageExtensionByLanguage = languageExtensionByLanguage;
 				this.languageNameByLanguage = languageNameByLanguage;
+			}
+		}
+	}
+
+	/**
+	 * Loads all document builder extensions declared using Eclipse plug-ins. See the
+	 * <i>org.eclipse.mylyn.wikitext.core.documentBuilderExtension</i> extension point
+	 * 
+	 * @see DocumentBuilderExtension
+	 */
+	private void initializeDocumentBuilderExtensions() {
+		synchronized (this) {
+			if (this.extensionByName == null) {
+				SortedMap<String, Class<? extends DocumentBuilderExtension>> extensionByName = new TreeMap<String, Class<? extends DocumentBuilderExtension>>();
+				Map<Class<? extends DocumentBuilderExtension>, String> extensionNameByExtension = new HashMap<Class<? extends DocumentBuilderExtension>, String>();
+
+				IExtensionPoint extensionPoint = Platform.getExtensionRegistry().getExtensionPoint(getPluginId(),
+						EXTENSION_BUILDER_EXTENSION);
+				if (extensionPoint != null) {
+					IConfigurationElement[] configurationElements = extensionPoint.getConfigurationElements();
+					for (IConfigurationElement element : configurationElements) {
+						String name = element.getAttribute("name"); //$NON-NLS-1$
+						if (name == null || name.length() == 0) {
+							log(IStatus.ERROR,
+									MessageFormat.format(
+											EXTENSION_BUILDER_EXTENSION + Messages.getString("WikiTextPlugin.10"), element.getDeclaringExtension() //$NON-NLS-1$
+													.getContributor()
+													.getName()));
+							continue;
+						}
+						Object extension;
+						try {
+							extension = element.createExecutableExtension("class"); //$NON-NLS-1$
+						} catch (CoreException e) {
+							getLog().log(e.getStatus());
+							continue;
+						}
+						if (!(extension instanceof DocumentBuilderExtension)) {
+							log(IStatus.ERROR, MessageFormat.format(Messages.getString("WikiTextPlugin.1"), //$NON-NLS-1$
+									extension.getClass().getName()));
+							continue;
+						}
+						DocumentBuilderExtension d = (DocumentBuilderExtension) extension;
+						{
+							Class<? extends DocumentBuilderExtension> previous = extensionByName.put(name, d.getClass());
+							if (previous != null) {
+								log(IStatus.ERROR,
+										MessageFormat.format(
+												EXTENSION_BUILDER_EXTENSION + Messages.getString("WikiTextPlugin.14"), //$NON-NLS-1$
+												name, element.getDeclaringExtension().getContributor().getName(), name));
+								extensionByName.put(name, previous);
+								continue;
+							} else {
+								extensionNameByExtension.put(d.getClass(), name);
+							}
+						}
+					}
+				}
+				this.extensionByName = extensionByName;
 			}
 		}
 	}

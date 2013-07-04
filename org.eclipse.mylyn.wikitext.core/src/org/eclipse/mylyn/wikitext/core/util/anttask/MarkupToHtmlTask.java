@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2012 David Green and others.
+ * Copyright (c) 2007, 2013 David Green and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,7 +8,8 @@
  * Contributors:
  *     David Green - initial API and implementation
  *     Peter Stibrany - bug 294383 
- *     Torkild U. Resheim - Handle links when transforming file based wiki
+ *     Torkild U. Resheim - Handle links when transforming file based wiki, bug 325006
+ *     Torkild U. Resheim - Added support for document builder extensions, bug 402207
  *******************************************************************************/
 package org.eclipse.mylyn.wikitext.core.util.anttask;
 
@@ -36,8 +37,10 @@ import org.eclipse.mylyn.internal.wikitext.core.parser.builder.SplittingHtmlDocu
 import org.eclipse.mylyn.internal.wikitext.core.parser.builder.SplittingOutlineParser;
 import org.eclipse.mylyn.internal.wikitext.core.parser.builder.SplittingStrategy;
 import org.eclipse.mylyn.wikitext.core.parser.MarkupParser;
+import org.eclipse.mylyn.wikitext.core.parser.builder.DocumentBuilderExtension;
 import org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder;
 import org.eclipse.mylyn.wikitext.core.parser.markup.MarkupLanguage;
+import org.eclipse.mylyn.wikitext.core.util.ServiceLocator;
 
 /**
  * An Ant task for converting lightweight markup to HTML format.
@@ -82,6 +85,13 @@ public class MarkupToHtmlTask extends MarkupTask {
 	private String htmlDoctype = null;
 
 	private String copyrightNotice = null;
+
+	/**
+	 * A list of document builder extensions activated for the task
+	 * 
+	 * @since 1.9
+	 */
+	protected ArrayList<DocumentBuilderExtension> extensions = new ArrayList<DocumentBuilderExtension>();
 
 	@Override
 	public void execute() throws BuildException {
@@ -208,6 +218,12 @@ public class MarkupToHtmlTask extends MarkupTask {
 			}
 			try {
 				HtmlDocumentBuilder builder = new HtmlDocumentBuilder(writer, formatOutput);
+				// Activate builder extensions added to this task and allow
+				// them to execute any pre-build work. 
+				for (DocumentBuilderExtension extension : extensions) {
+					builder.activateExtension(extension);
+					extension.preBuild(htmlOutputFile.getParentFile());
+				}
 				for (Stylesheet stylesheet : stylesheets) {
 					HtmlDocumentBuilder.Stylesheet builderStylesheet;
 
@@ -275,6 +291,11 @@ public class MarkupToHtmlTask extends MarkupTask {
 	}
 
 	void processed(String markupContent, SplitOutlineItem item, final File baseDir, final File source) {
+		// Activate builder extensions added to this task and allow
+		// them to execute any pre-build work. 
+		for (DocumentBuilderExtension extension : extensions) {
+			extension.postBuild();
+		}
 	}
 
 	protected File computeHtmlFile(final File source, String name) {
@@ -338,6 +359,25 @@ public class MarkupToHtmlTask extends MarkupTask {
 			throw new IllegalArgumentException();
 		}
 		stylesheets.add(stylesheet);
+	}
+
+	/**
+	 * @since 1.9
+	 */
+	public void addConfiguredBuilderExtension(BuilderExtension extension) {
+		ServiceLocator sl = ServiceLocator.getInstance(getClass().getClassLoader());
+		extensions.add(sl.getDocumentBuilderExtension(extension.getName()));
+	}
+
+	/**
+	 * Returns a list of all configured document builder extensions. This method should only be called after the ant
+	 * task has been properly configured.
+	 * 
+	 * @return a list of all configured extensions
+	 * @since 1.9
+	 */
+	public ArrayList<DocumentBuilderExtension> getDocumentBuilderExtensions() {
+		return extensions;
 	}
 
 	/**

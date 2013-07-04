@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+ *     Torkild U. Resheim - Added support for document builder extensions
  *******************************************************************************/
 package org.eclipse.mylyn.internal.wikitext.core.parser.builder;
 
@@ -15,7 +16,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.mylyn.wikitext.core.parser.Attributes;
 import org.eclipse.mylyn.wikitext.core.parser.DocumentBuilder;
@@ -24,11 +27,13 @@ import org.eclipse.mylyn.wikitext.core.parser.LinkAttributes;
 import org.eclipse.mylyn.wikitext.core.parser.Locator;
 import org.eclipse.mylyn.wikitext.core.parser.TableAttributes;
 import org.eclipse.mylyn.wikitext.core.parser.TableCellAttributes;
+import org.eclipse.mylyn.wikitext.core.parser.builder.DocumentBuilderExtension;
 import org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder;
 import org.eclipse.mylyn.wikitext.core.parser.builder.HtmlDocumentBuilder.Stylesheet;
 
 /**
  * @author David Green
+ * @author Torkild U. Resheim
  */
 public class SplittingHtmlDocumentBuilder extends DocumentBuilder {
 
@@ -49,6 +54,11 @@ public class SplittingHtmlDocumentBuilder extends DocumentBuilder {
 	private boolean navigationImages;
 
 	private String navigationImagePath = "images"; //$NON-NLS-1$
+
+	/**
+	 * @since 1.9
+	 */
+	protected Set<DocumentBuilderExtension> activeExtensions = new HashSet<DocumentBuilderExtension>();
 
 	public void setRootBuilder(HtmlDocumentBuilder rootBuilder) {
 		this.rootBuilder = rootBuilder;
@@ -431,5 +441,25 @@ public class SplittingHtmlDocumentBuilder extends DocumentBuilder {
 
 	public boolean isFormatting() {
 		return formatting;
+	}
+
+	/**
+	 * Activates the specified extension.
+	 * 
+	 * @since 1.9
+	 */
+	public void activateExtension(DocumentBuilderExtension extension) {
+		activeExtensions.add(extension);
+	}
+
+	/**
+	 * Returns the list of all active extensions.
+	 * 
+	 * @see #activateExtension(DocumentBuilderExtension)
+	 * @return the list of all active extension
+	 * @since 1.9
+	 */
+	public Set<DocumentBuilderExtension> getActiveExtensions() {
+		return activeExtensions;
 	}
 }
