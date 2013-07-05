@@ -140,8 +140,8 @@ public class MathJaxDocumentBuilderExtension extends HtmlDocumentBuilderExtensio
 			if (destination == null) {
 				// Path to MathJax must be using the plug-in
 				Bundle bundle = Platform.getBundle("org.eclipse.mylyn.wikitext.mathjax.core");
-				URL fileURL = FileLocator.toFileURL(bundle.getEntry("/mathjax/MathJax.js"));
-				writer.writeAttribute("src", fileURL.toURI().toString() + "?config=" + configuration.name);
+				String url = FileLocator.toFileURL(bundle.getEntry("/mathjax/MathJax.js")).toExternalForm();
+				writer.writeAttribute("src", url + "?config=" + configuration.name);
 			} else {
 				// Must be relative path
 				writer.writeAttribute("src", "mathjax/MathJax.js?config=" + configuration.name);
@@ -149,8 +149,6 @@ public class MathJaxDocumentBuilderExtension extends HtmlDocumentBuilderExtensio
 		} catch (MalformedURLException e) {
 			writer.writeComment("Exception:" + e.getMessage());
 		} catch (IOException e) {
-			writer.writeComment("Exception:" + e.getMessage());
-		} catch (URISyntaxException e) {
 			writer.writeComment("Exception:" + e.getMessage());
 		}
 		writer.writeEndElement();

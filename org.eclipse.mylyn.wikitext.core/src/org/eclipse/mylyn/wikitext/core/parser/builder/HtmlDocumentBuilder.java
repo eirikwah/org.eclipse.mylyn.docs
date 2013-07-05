@@ -7,8 +7,13 @@
  *
  * Contributors:
  *     David Green - initial API and implementation
+<<<<<<< mathjax
  *     Torkild U. Resheim - Handle links when transforming file based wiki, bug 325006
  *     Torkild U. Resheim - Added support for document builder extensions, bug 402207
+=======
+ *     Torkild U. Resheim - Added support for document builder extensions
+ *     Torkild U. Resheim - Handle links when transforming file based wiki
+>>>>>>> 1f0c02f 402120: Add support for rendering math in WikiText editor
  *******************************************************************************/
 package org.eclipse.mylyn.wikitext.core.parser.builder;
 
