@@ -110,7 +110,8 @@ public class MathJaxDocumentBuilderExtension extends HtmlDocumentBuilderExtensio
 			// We cannot obtain the bundle of this plug-in we're probably not
 			// running under Eclipse.
 			if (bundle == null) {
-				URL url = MathJaxDocumentBuilderExtension.class.getResource("../../../../../");
+				// TODO: Handle missing "bin" at root.
+				URL url = MathJaxDocumentBuilderExtension.class.getResource("../../../../../../");
 				try {
 					source = new File(url.toURI()).getAbsoluteFile();
 				} catch (URISyntaxException e) {
