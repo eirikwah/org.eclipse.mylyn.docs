@@ -100,6 +100,12 @@ public class EPUBFileUtil {
 		if (name.endsWith(".css")) { //$NON-NLS-1$
 			return "text/css"; //$NON-NLS-1$
 		}
+		if (name.endsWith(".js")) { //$NON-NLS-1$
+			return "application/javascript"; //$NON-NLS-1$
+		}
+		if (name.endsWith(".md")) { //$NON-NLS-1$
+			return "text/x-markdown"; //$NON-NLS-1$
+		}
 		if (name.endsWith(".epub")) { //$NON-NLS-1$
 			return EPUB.MIMETYPE_EPUB;
 		}
